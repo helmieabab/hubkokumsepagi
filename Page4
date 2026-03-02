@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Takwim SK Kepangian</title>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; margin: 0; padding: 10px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); min-height: 90vh; }
+        .nav-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-back { text-decoration: none; color: #4318ff; font-weight: bold; font-size: 14px; background:none; border:none; cursor:pointer; }
+        .header-dash { text-align: center; border-bottom: 3px solid #4318ff; padding-bottom: 15px; margin-bottom: 20px; }
+        #calendar { background: white; padding: 10px; border-radius: 10px; border: 1px solid #eee; }
+        
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto; }
+        .modal-content { background: white; margin: 5% auto; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 5px 30px rgba(0,0,0,0.3); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; color: #2b3674; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
+        .btn-save { background: #4318ff; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-cancel { background: #f4f7fe; color: #2b3674; border: none; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; margin-top: 5px; }
+        
+        .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .report-table th, .report-table td { border: 1px solid #000; padding: 10px; text-align: left; font-size: 12px; }
+        
+        .hidden { display: none; }
+        
+        @media print {
+            .container, .nav-header, .fc-header-toolbar, .no-print { display: none !important; }
+            .modal { position: absolute; display: block !important; background: none; top: 0; }
+            .modal-content { width: 100%; border: none; margin: 0; padding: 0; max-width: 100%; box-shadow: none; }
+            #formAdminArea { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="nav-header">
+        <button class="btn-back" onclick="kembaliKeMenu()">⬅️ MENU UTAMA</button>
+        <span id="userStatus" style="font-size: 12px; color: #a3aed0;">Menyemak status akses...</span>
+    </div>
+
+    <div class="header-dash">
+        <h1 style="font-size: 20px; margin: 0; color: #2b3674;">PENGURUSAN TAKWIM</h1>
+        <p style="font-size: 13px; color: #4318ff; margin: 0; font-weight: 600;">SK KEPANGIAN</p>
+    </div>
+
+    <div id="calendar"></div>
+</div>
+
+<div id="mainModal" class="modal">
+    <div class="modal-content">
+        
+        <div id="formAdminArea" class="hidden">
+            <h3 id="formTitle" style="margin-top:0; color:#2b3674; border-bottom: 2px solid #f4f7fe; padding-bottom: 10px;">Tambah Aktiviti</h3>
+            <input type="hidden" id="eventId">
+            <div class="form-group">
+                <label>Tarikh Dipilih</label>
+                <input type="text" id="displayNewDate" class="form-control" readonly style="background:#f4f7fe;">
+                <input type="hidden" id="rawDate">
+            </div>
+            <div class="form-group">
+                <label>Jenis Aktiviti</label>
+                <select id="jenisAktiviti" class="form-control" onchange="toggleBorangKokum()">
+                    <option value="">-- Sila Pilih --</option>
+                    <option value="PERJUMPAAN KOKUM">PERJUMPAAN KOKUM</option>
+                    <option value="SUKAN/PERMAINAN">SUKAN / PERMAINAN</option>
+                    <option value="MBMMBI">MBMMBI</option>
+                    <option value="LAIN-LAIN">LAIN-LAIN (NYATAKAN)</option>
+                </select>
+            </div>
+            <div id="extraInputArea" class="form-group hidden">
+                <label>Nyatakan Aktiviti</label>
+                <input type="text" id="customAktiviti" class="form-control" placeholder="Cth: Mesyuarat Guru">
+            </div>
+            <div id="kokumTemplateArea" class="hidden" style="background: #f4f7fe; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                <div class="form-group">
+                    <label>Kategori</label>
+                    <select id="newKat" class="form-control">
+                        <option value="UB">Unit Beruniform (UB)</option>
+                        <option value="KP">Kelab & Persatuan (KP)</option>
+                        <option value="SP">Sukan & Permainan (SP)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nama Unit</label>
+                    <input type="text" id="newUnit" class="form-control" placeholder="Cth: Pengakap / Persatuan BM">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Guru Bertugas / Catatan</label>
+                <textarea id="newGuru" class="form-control" rows="3" placeholder="Masukkan nama guru atau maklumat tambahan"></textarea>
+            </div>
+            <button id="btnSimpan" onclick="simpanKeSheet()" class="btn-save">💾 SIMPAN AKTIVITI</button>
+            <button onclick="tutupModal()" class="btn-cancel">BATAL</button>
+        </div>
+
+        <div id="printArea" class="hidden">
+            <div class="no-print" style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <button onclick="window.print()" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">🖨️ CETAK</button>
+                <button onclick="tutupModal()" style="background:#e74c3c; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">TUTUP</button>
+            </div>
+            <div id="isiCetak">
+                <div style="text-align: center; border-bottom: 4px double #000; padding-bottom: 10px; margin-bottom: 15px;">
+                    <h2 style="margin:0; font-size: 16px;">SK KEPANGIAN</h2>
+                    <p style="margin:0; font-size: 12px;">PENGURUSAN TAKWIM HARIAN</p>
+                    <p style="margin:5px 0; font-weight: bold; font-size: 13px;" id="printDisplayDate"></p>
+                </div>
+                <table class="report-table">
+                    <thead><tr><th width="30%">Aktiviti / Unit</th><th width="50%">Guru Bertugas / Maklumat</th><th width="20%">Masa</th></tr></thead>
+                    <tbody id="weeklyList"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// PENTING: Gantikan dengan URL Web App Apps Script Cikgu
+const SCRIPT_URL = "MASUKKAN_URL_WEBAPP_CIKGU_DI_SINI";
+
+let globalEvents = [];
+let isAdmin = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const role = sessionStorage.getItem('userRole') || 'IBUBAPA';
+
+    if(role === 'ADMIN') {
+        isAdmin = true;
+        document.getElementById('userStatus').innerText = "Pentadbir (Klik tarikh untuk tambah/edit)";
+        document.getElementById('userStatus').style.color = "#4318ff";
+    } else if(role === 'GURU') {
+        document.getElementById('userStatus').innerText = "Mod Guru (Paparan Sahaja)";
+    } else {
+        document.getElementById('userStatus').innerText = "Mod Ibu Bapa (Paparan Sahaja)";
+    }
+    
+    muatData();
+});
+
+function muatData() {
+    fetch(`${SCRIPT_URL}?action=getEventsFromSheet`)
+    .then(res => res.json())
+    .then(events => {
+        globalEvents = events;
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'ms',
+            headerToolbar: { 
+                left: 'prev,next today', 
+                center: 'title', 
+                right: 'dayGridMonth,listYear' 
+            },
+            events: events,
+            selectable: true,
+            dateClick: function(info) {
+                if(!isAdmin) {
+                    alert("Akses Terhad: Hanya ADMIN boleh menambah aktiviti.");
+                    return;
+                }
+                bukaBorangTambah(info.dateStr);
+            },
+            eventClick: function(info) {
+                bukaPreviewCetak(info.event.startStr);
+            }
+        });
+        calendar.render();
+    })
+    .catch(err => console.error("Gagal muat takwim:", err));
+}
+
+function bukaBorangTambah(tarikh) {
+    document.getElementById('eventId').value = ""; 
+    document.getElementById('rawDate').value = tarikh;
+    document.getElementById('displayNewDate').value = new Date(tarikh).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('formTitle').innerText = "Tambah Aktiviti";
+    
+    document.getElementById('jenisAktiviti').value = "";
+    document.getElementById('kokumTemplateArea').classList.add('hidden');
+    document.getElementById('extraInputArea').classList.add('hidden');
+    document.getElementById('newKat').value = "UB";
+    document.getElementById('newUnit').value = "";
+    document.getElementById('newGuru').value = "";
+    
+    document.getElementById('btnSimpan').disabled = false;
+    document.getElementById('btnSimpan').innerText = "💾 SIMPAN AKTIVITI";
+
+    document.getElementById('mainModal').style.display = 'block';
+    document.getElementById('formAdminArea').classList.remove('hidden');
+    document.getElementById('printArea').classList.add('hidden');
+}
+
+function toggleBorangKokum() {
+    const jenis = document.getElementById('jenisAktiviti').value;
+    const kokumArea = document.getElementById('kokumTemplateArea');
+    const extraArea = document.getElementById('extraInputArea');
+
+    if(jenis === "PERJUMPAAN KOKUM") {
+        kokumArea.classList.remove('hidden');
+        extraArea.classList.add('hidden');
+    } else if(jenis === "LAIN-LAIN") {
+        kokumArea.classList.add('hidden');
+        extraArea.classList.remove('hidden');
+    } else {
+        kokumArea.classList.add('hidden');
+        extraArea.classList.add('hidden');
+    }
+}
+
+function simpanKeSheet() {
+    const jenis = document.getElementById('jenisAktiviti').value;
+    if(!jenis) { alert("Sila pilih jenis aktiviti!"); return; }
+
+    document.getElementById('btnSimpan').disabled = true;
+    document.getElementById('btnSimpan').innerText = "Menyimpan...";
+
+    let kategori = jenis;
+    let unit = "";
+
+    if(jenis === "PERJUMPAAN KOKUM") {
+        kategori = document.getElementById('newKat').value;
+        unit = document.getElementById('newUnit').value;
+    } else if(jenis === "LAIN-LAIN") {
+        unit = document.getElementById('customAktiviti').value;
+    } else {
+        unit = jenis;
+    }
+
+    const eventId = document.getElementById('eventId').value;
+    const payload = {
+        tarikh: document.getElementById('rawDate').value,
+        kategori: kategori,
+        unit: unit || jenis,
+        guru: document.getElementById('newGuru').value,
+        masa: "Mengikut Jadual",
+        id: eventId
+    };
+
+    const action = eventId ? "kemaskiniAktiviti" : "tambahSatuAktiviti";
+
+    fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: action, data: payload })
+    })
+    .then(res => res.json())
+    .then(res => {
+        alert(res.message || "Berjaya dikemaskini.");
+        location.reload();
+    })
+    .catch(err => {
+        alert("Ralat simpan data.");
+        document.getElementById('btnSimpan').disabled = false;
+    });
+}
+
+function bukaPreviewCetak(tarikh) {
+    const events = globalEvents.filter(e => e.start === tarikh);
+    if(events.length === 0) return;
+
+    document.getElementById('printDisplayDate').innerText = new Date(tarikh).toLocaleDateString('ms-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    
+    let html = "";
+    events.forEach(e => {
+        let adminActions = "";
+        if(isAdmin) {
+            adminActions = `
+            <div class="no-print" style="margin-top: 8px;">
+                <button onclick="bukaBorangEdit('${e.id}')" style="background:#f39c12; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer;">✏️ Edit</button>
+                <button onclick="padamAktiviti('${e.id}')" style="background:#e74c3c; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:11px; margin-left:5px; cursor:pointer;">🗑️ Padam</button>
+            </div>`;
+        }
+
+        html += `<tr>
+                    <td><strong>${e.title}</strong><br><small>${e.extendedProps.category}</small></td>
+                    <td>${e.extendedProps.teacher.replace(/\n/g, '<br>')}${adminActions}</td>
+                    <td>${e.extendedProps.time}</td>
+                 </tr>`;
+    });
+    
+    document.getElementById('weeklyList').innerHTML = html;
+
+    let headerButang = `<button onclick="window.print()" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">🖨️ CETAK</button>`;
+    
+    if(isAdmin) {
+        headerButang = `<button onclick="bukaBorangTambah('${tarikh}')" style="background:#4318ff; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold; margin-right:10px;">➕ TAMBAH LAGI</button>` + headerButang;
+    }
+
+    document.querySelector('.no-print').innerHTML = `
+        <div>${headerButang}</div>
+        <button onclick="tutupModal()" style="background:#e74c3c; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">TUTUP</button>
+    `;
+
+    document.getElementById('mainModal').style.display = 'block';
+    document.getElementById('formAdminArea').classList.add('hidden');
+    document.getElementById('printArea').classList.remove('hidden');
+}
+
+function bukaBorangEdit(eventId) {
+    const ev = globalEvents.find(e => e.id == eventId);
+    if(!ev) { alert("Ralat: Aktiviti tidak dijumpai."); return; }
+
+    document.getElementById('formTitle').innerText = "Kemaskini Aktiviti";
+    document.getElementById('eventId').value = eventId;
+    document.getElementById('rawDate').value = ev.start;
+    document.getElementById('displayNewDate').value = new Date(ev.start).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('newGuru').value = ev.extendedProps.teacher || "";
+
+    const cat = ev.extendedProps.category;
+    const title = ev.title;
+    
+    if (cat === "UB" || cat === "KP" || cat === "SP") {
+        document.getElementById('jenisAktiviti').value = "PERJUMPAAN KOKUM";
+        document.getElementById('newKat').value = cat;
+        document.getElementById('newUnit').value = title;
+    } else if (title === "SUKAN/PERMAINAN" || title === "MBMMBI") {
+        document.getElementById('jenisAktiviti').value = title;
+    } else {
+        document.getElementById('jenisAktiviti').value = "LAIN-LAIN";
+        document.getElementById('customAktiviti').value = title;
+    }
+
+    toggleBorangKokum();
+    document.getElementById('btnSimpan').disabled = false;
+    document.getElementById('btnSimpan').innerText = "💾 KEMASKINI AKTIVITI";
+    document.getElementById('printArea').classList.add('hidden');
+    document.getElementById('formAdminArea').classList.remove('hidden');
+}
+
+function padamAktiviti(eventId) {
+    if(confirm("Anda pasti mahu memadam aktiviti ini?")) {
+        fetch(SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "padamSatuAktiviti", id: eventId })
+        })
+        .then(res => res.json())
+        .then(res => {
+            alert(res.message || "Aktiviti dipadam.");
+            location.reload();
+        });
+    }
+}
+
+function tutupModal() { 
+    document.getElementById('mainModal').style.display = 'none'; 
+}
+
+function kembaliKeMenu() {
+    window.location.href = "index.html";
+}
+</script>
+</body>
+</html>
