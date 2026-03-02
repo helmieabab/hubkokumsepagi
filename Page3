@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ms">
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+      :root { --bg-color: #f4f7fe; --primary: #4318ff; --success: #05cd99; --text-main: #2b3674; }
+      body { background-color: var(--bg-color); font-family: 'Poppins', sans-serif; color: var(--text-main); }
+      .navbar-glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255,255,255,0.5); padding: 15px 0; position: sticky; top: 0; z-index: 1000; }
+      .form-card { background: white; border-radius: 20px; padding: 30px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.03); margin-bottom: 25px; }
+      .form-floating > .form-control, .form-floating > .form-select { border: 2px solid #e0e5f2; border-radius: 12px; }
+      .attendance-box { max-height: 450px; overflow-y: auto; background: #f8f9fc; border-radius: 15px; padding: 10px; border: 1px solid #e0e5f2; }
+      .student-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #edf2f7; background: white; margin-bottom: 5px; border-radius: 10px; }
+      .stat-box { background: linear-gradient(135deg, var(--primary), #00d2ff); color: white; border-radius: 15px; padding: 20px; text-align: center; }
+      .img-preview { width: 120px; height: 80px; object-fit: cover; border-radius: 10px; margin: 5px; border: 3px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+      .btn-submit { background: var(--primary); color: white; border-radius: 12px; padding: 18px; font-weight: 700; width: 100%; border: none; transition: 0.3s; }
+      .btn-pdf { background: var(--success); color: white; border-radius: 12px; padding: 15px; font-weight: 700; width: 100%; border: none; margin-top: 10px; text-decoration: none; display: none; text-align: center; }
+      #loader-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; }
+    </style>
+  </head>
+  <body>
+
+    <div id="loader-overlay">
+      <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+      <h5 class="fw-bold" id="loader-text">Memproses Laporan...</h5>
+    </div>
+
+    <nav class="navbar-glass">
+      <div class="container d-flex justify-content-between align-items-center">
+        <div class="fw-bold text-primary"><i class="fas fa-file-alt me-2"></i>E-PELAPORAN PRO</div>
+        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="home()">KEMBALI</button>
+      </div>
+    </nav>
+
+    <div class="container mt-4">
+      <form id="proForm" onsubmit="hantarSemua(event)">
+        
+        <div class="form-card">
+          <h6 class="fw-bold text-muted mb-3">BAHAGIAN 1: INFO AKTIVITI</h6>
+          <div class="row g-3">
+            <div class="col-md-6"><div class="form-floating"><input type="text" class="form-control" id="namaGuru" readonly><label>Guru Pelapor</label></div></div>
+            <div class="col-md-3"><div class="form-floating"><input type="date" class="form-control" id="tarikh" required><label>Tarikh</label></div></div>
+            <div class="col-md-3">
+              <div class="form-floating">
+                <select class="form-select" id="minggu" required>
+                  <option value="" disabled selected>-</option>
+                  <script>
+                    for(let i=1; i<=45; i++) document.write(`<option value="Minggu ${i}">Minggu ${i}</option>`);
+                  </script>
+                </select><label>Pilihan Minggu</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mt-1">
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="kategori" onchange="updateUnit()" required>
+                  <option value="" disabled selected>Pilih Kategori</option>
+                  <option value="UNIT BERUNIFORM">Unit Beruniform</option>
+                  <option value="KELAB & PERSATUAN">Kelab & Persatuan</option>
+                  <option value="SUKAN & PERMAINAN">Sukan & Permainan</option>
+                </select><label>Komponen</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="unit" onchange="filterMurid()" required>
+                  <option value="" disabled selected>Pilih Kategori Dahulu</option>
+                </select><label>Nama Unit</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-floating mt-3">
+            <input type="text" class="form-control" id="aktiviti" required placeholder="Tajuk"><label>Tajuk Aktiviti</label>
+          </div>
+          <div class="form-floating mt-3">
+            <textarea class="form-control" id="objektif" style="height: 80px" required placeholder="Objektif"></textarea><label>Objektif / Sasaran</label>
+          </div>
+        </div>
+
+        <div class="form-card" id="card-kehadiran" style="display:none;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-muted m-0">BAHAGIAN 2: SENARAI KEHADIRAN</h6>
+            <span class="badge bg-primary px-3" id="countBadge">Mencari Murid...</span>
+          </div>
+          
+          <div class="row mb-3 g-2">
+            <div class="col-6"><div class="stat-box"><small>HADIR</small><h4 id="statHadir" class="fw-bold m-0">0</h4></div></div>
+            <div class="col-6"><div class="stat-box" style="background:#05cd99;"><small>PERATUS</small><h4 id="statPeratus" class="fw-bold m-0">0%</h4></div></div>
+          </div>
+
+          <div class="attendance-box" id="listMurid"></div>
+        </div>
+
+        <div class="form-card">
+          <h6 class="fw-bold text-muted mb-3">BAHAGIAN 3: RINGKASAN & REFLEKSI</h6>
+          <div class="form-floating mt-3">
+            <textarea class="form-control" id="ringkasan" style="height: 100px" required placeholder="Ringkasan Aktiviti"></textarea>
+            <label>Ringkasan Aktiviti</label>
+          </div>
+          <div class="form-floating mt-3">
+            <textarea class="form-control" id="refleksi" style="height: 100px" required placeholder="Refleksi"></textarea>
+            <label>Refleksi (Kekuatan, Kelemahan, Penambahbaikan)</label>
+          </div>
+        </div>
+        
+        <div class="form-card">
+          <h6 class="fw-bold text-muted mb-3">BAHAGIAN 4: GAMBAR (MAX 4 - LANDSCAPE)</h6>
+          <input type="file" class="form-control" id="imgInput" accept="image/*" multiple onchange="validateImages(event)">
+          <div id="imgPreview" class="d-flex flex-wrap mt-3"></div>
+        </div>
+
+        <button type="submit" class="btn btn-submit mb-2" id="btnHantar">HANTAR LAPORAN & JANA PDF <i class="fas fa-paper-plane ms-2"></i></button>
+        <a id="btnDownloadPDF" class="btn-pdf" target="_blank">LIHAT / MUAT TURUN PDF <i class="fas fa-file-pdf ms-2"></i></a>
+        <div class="mb-5"></div>
+
+      </form>
+    </div>
+
+    <script>
+      // GANTIKAN URL INI DENGAN SCRIPT URL ANDA
+      const SCRIPT_URL = "URL_WEB_APP_GAS_ANDA";
+      
+      let masterList = [];
+      let filteredList = [];
+      let finalImages = [];
+
+      const units = {
+        "UNIT BERUNIFORM": ["PENGAKAP", "BSMM", "TKRS"],
+        "KELAB & PERSATUAN": ["BAHASA MELAYU", "BAHASA INGGERIS", "STEM"],
+        "SUKAN & PERMAINAN": ["BOLA BALING", "BADMINTON", "CATUR"]
+      };
+
+      window.onload = () => {
+        toggleLoader(true, "Memuatkan Data Murid...");
+        
+        const savedName = sessionStorage.getItem("userName");
+        if (savedName) document.getElementById('namaGuru').value = savedName;
+        
+        // Ambil data murid menggunakan fetch
+        fetch(`${SCRIPT_URL}?action=getDataMurid`)
+          .then(res => res.json())
+          .then(data => {
+            masterList = data;
+            toggleLoader(false);
+          })
+          .catch(err => {
+            console.error(err);
+            toggleLoader(false);
+          });
+      };
+
+      function updateUnit() {
+        const kat = document.getElementById('kategori').value;
+        const sel = document.getElementById('unit');
+        sel.innerHTML = '<option value="" disabled selected>Pilih Unit</option>';
+        if(units[kat]){
+          units[kat].forEach(u => sel.innerHTML += `<option value="${u}">${u}</option>`);
+        }
+        document.getElementById('card-kehadiran').style.display = 'none';
+      }
+
+      function filterMurid() {
+        const selectedUnit = document.getElementById('unit').value.toUpperCase().trim();
+        const kat = document.getElementById('kategori').value;
+        let colIndex = kat === "UNIT BERUNIFORM" ? 4 : (kat === "SUKAN & PERMAINAN" ? 5 : 6);
+
+        filteredList = masterList.filter(row => {
+          if (!row[colIndex]) return false;
+          return row[colIndex].toString().toUpperCase().trim() === selectedUnit;
+        }).map(row => ({
+          nama: row[0], 
+          kelas: row[3], 
+          hadir: false
+        })).sort((a, b) => a.nama.localeCompare(b.nama));
+
+        if(filteredList.length > 0) {
+          renderList();
+        } else {
+          document.getElementById('card-kehadiran').style.display = 'block';
+          document.getElementById('listMurid').innerHTML = '<div class="p-4 text-center text-danger fw-bold">Tiada murid ditemui.</div>';
+        }
+      }
+
+      function renderList() {
+        const box = document.getElementById('listMurid');
+        box.innerHTML = '';
+        document.getElementById('countBadge').innerText = filteredList.length + " Murid";
+        
+        filteredList.forEach((m, i) => {
+          box.innerHTML += `
+            <div class="student-row">
+              <div><small class="text-muted d-block" style="font-size:10px">${m.kelas}</small><span class="fw-bold">${m.nama}</span></div>
+              <div class="form-check form-switch"><input class="form-check-input" type="checkbox" style="width:45px; height:22px;" onchange="toggleHadir(${i}, this.checked)"></div>
+            </div>`;
+        });
+        document.getElementById('card-kehadiran').style.display = 'block';
+        updateStats();
+      }
+
+      function toggleHadir(i, val) { filteredList[i].hadir = val; updateStats(); }
+
+      function updateStats() {
+        const total = filteredList.length;
+        const hadir = filteredList.filter(m => m.hadir).length;
+        document.getElementById('statHadir').innerText = hadir + " / " + total;
+        document.getElementById('statPeratus').innerText = total === 0 ? "0%" : Math.round((hadir/total)*100) + "%";
+      }
+
+      function validateImages(e) {
+        const files = Array.from(e.target.files);
+        const preview = document.getElementById('imgPreview');
+        preview.innerHTML = '';
+        finalImages = [];
+        if (files.length > 4) { alert("Maksimum 4 gambar!"); e.target.value = ""; return; }
+        
+        files.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+              if (img.width < img.height) {
+                alert("Gambar mesti Landscape!");
+                e.target.value = ""; 
+              } else {
+                // Kompres sedikit gambar di sini jika perlu
+                finalImages.push({ name: file.name, mimeType: file.type, data: event.target.result.split(',')[1] });
+                preview.innerHTML += `<img src="${event.target.result}" class="img-preview">`;
+              }
+            };
+            img.src = event.target.result;
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function hantarSemua(e) {
+        e.preventDefault();
+        if(filteredList.length === 0) return alert("Sila pilih unit dan murid!");
+        
+        toggleLoader(true, "Menyimpan & Menjana PDF...");
+        
+        const payload = {
+          action: "simpanLaporanPro",
+          namaGuru: document.getElementById('namaGuru').value,
+          tarikh: document.getElementById('tarikh').value,
+          minggu: document.getElementById('minggu').value,
+          kategori: document.getElementById('kategori').value,
+          unit: document.getElementById('unit').value,
+          aktiviti: document.getElementById('aktiviti').value,
+          objektif: document.getElementById('objektif').value,
+          ringkasan: document.getElementById('ringkasan').value,
+          refleksi: document.getElementById('refleksi').value,
+          hadirStat: document.getElementById('statHadir').innerText,
+          peratusStat: document.getElementById('statPeratus').innerText,
+          senaraiKehadiran: filteredList.map(m => ({ nama: m.nama, kelas: m.kelas, status: m.hadir ? "HADIR" : "TIDAK HADIR" })),
+          gambar: finalImages
+        };
+
+        fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+          toggleLoader(false);
+          if(res.success) {
+            alert("Laporan Berjaya!");
+            const btnPdf = document.getElementById('btnDownloadPDF');
+            btnPdf.href = res.pdfUrl;
+            btnPdf.style.display = 'block';
+            document.getElementById('btnHantar').style.display = 'none';
+          } else {
+            alert("Ralat: " + res.error);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          toggleLoader(false);
+          alert("Gagal menghubungi server.");
+        });
+      }
+
+      function toggleLoader(show, text="") {
+        document.getElementById('loader-overlay').style.display = show ? 'flex' : 'none';
+        document.getElementById('loader-text').innerText = text;
+      }
+
+      function home() { window.location.href = "index.html"; }
+    </script>
+  </body>
+</html>
