@@ -4,6 +4,7 @@
     <base target="_top">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>E-KOKUM | Pelaporan Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -125,8 +126,7 @@
     </div>
 
     <script>
-      // GANTIKAN URL INI DENGAN SCRIPT URL ANDA
-      const SCRIPT_URL = "URL_WEB_APP_GAS_ANDA";
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzI6qiyts7ihoLUQl6V_pkemzNHyFAkJ36zPpJd44LaDaAaX-h3P-IbLkeaAWgPJ_Q2OA/exec";
       
       let masterList = [];
       let filteredList = [];
@@ -144,11 +144,10 @@
         const savedName = sessionStorage.getItem("userName");
         if (savedName) document.getElementById('namaGuru').value = savedName;
         
-        // Ambil data murid menggunakan fetch
-        fetch(`${SCRIPT_URL}?action=getDataMurid`)
+        fetch(`${SCRIPT_URL}?action=getFullSheetData`)
           .then(res => res.json())
           .then(data => {
-            masterList = data;
+            masterList = data.slice(1);
             toggleLoader(false);
           })
           .catch(err => {
@@ -185,7 +184,7 @@
           renderList();
         } else {
           document.getElementById('card-kehadiran').style.display = 'block';
-          document.getElementById('listMurid').innerHTML = '<div class="p-4 text-center text-danger fw-bold">Tiada murid ditemui.</div>';
+          document.getElementById('listMurid').innerHTML = '<div class="p-4 text-center text-danger fw-bold">Tiada murid ditemui dalam unit ini.</div>';
         }
       }
 
@@ -227,10 +226,11 @@
             const img = new Image();
             img.onload = () => {
               if (img.width < img.height) {
-                alert("Gambar mesti Landscape!");
+                alert("Sila gunakan gambar Landscape (melintang) sahaja.");
                 e.target.value = ""; 
+                preview.innerHTML = '';
+                finalImages = [];
               } else {
-                // Kompres sedikit gambar di sini jika perlu
                 finalImages.push({ name: file.name, mimeType: file.type, data: event.target.result.split(',')[1] });
                 preview.innerHTML += `<img src="${event.target.result}" class="img-preview">`;
               }
@@ -245,7 +245,7 @@
         e.preventDefault();
         if(filteredList.length === 0) return alert("Sila pilih unit dan murid!");
         
-        toggleLoader(true, "Menyimpan & Menjana PDF...");
+        toggleLoader(true, "Menyimpan & Menjana PDF Laporan...");
         
         const payload = {
           action: "simpanLaporanPro",
@@ -266,20 +266,18 @@
 
         fetch(SCRIPT_URL, {
           method: "POST",
+          mode: 'no-cors', // Penting untuk bypass CORS jika menghantar POST
           body: JSON.stringify(payload)
         })
-        .then(res => res.json())
-        .then(res => {
-          toggleLoader(false);
-          if(res.success) {
-            alert("Laporan Berjaya!");
-            const btnPdf = document.getElementById('btnDownloadPDF');
-            btnPdf.href = res.pdfUrl;
-            btnPdf.style.display = 'block';
-            document.getElementById('btnHantar').style.display = 'none';
-          } else {
-            alert("Ralat: " + res.error);
-          }
+        .then(() => {
+          // Kerana no-cors tidak memulangkan body, kita beri delay sikit dan anggap berjaya
+          // Atau Cikgu boleh gunakan cara alert biasa.
+          setTimeout(() => {
+             toggleLoader(false);
+             alert("Laporan telah dihantar! Sila semak folder Google Drive anda.");
+             document.getElementById('proForm').reset();
+             document.getElementById('imgPreview').innerHTML = '';
+          }, 3000);
         })
         .catch(err => {
           console.error(err);
