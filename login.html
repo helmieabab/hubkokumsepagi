@@ -91,12 +91,21 @@
   </div>
 
   <script>
+    // TAMBAHAN: SEMAK JIKA SUDAH ADA SESI, TERUS KE INDEX
+    window.onload = function() {
+      const currentRole = sessionStorage.getItem("userRole");
+      if (currentRole) {
+        window.location.href = "index.html";
+      }
+    };
+
     // FUNGSI UNTUK PAPAR/SEMBUNYI KATA LALUAN
     function togglePassword() {
       const role = document.getElementById('role').value;
       const passInput = document.getElementById('pass');
-      // Sembunyikan ruangan kata laluan jika Ibu Bapa dipilih
       passInput.style.display = (role === 'IBUBAPA') ? 'none' : 'block';
+      // Kosongkan password bila tukar role
+      passInput.value = "";
     }
 
     // FUNGSI PENGESAHAN LOG MASUK
@@ -105,9 +114,9 @@
       const pass = document.getElementById('pass').value;
       const errorMsg = document.getElementById('errorMsg');
       
-      // Sembunyikan mesej ralat jika ada percubaan baru
       if (errorMsg) errorMsg.style.display = 'none';
 
+      // PENGESAHAN LOGIK KATA LALUAN
       if (role === 'ADMIN' && pass === 'Adminsepagi') {
         saveAndRedirect('ADMIN');
       } else if (role === 'GURU' && pass === 'Gurusepagi') {
@@ -121,17 +130,19 @@
 
     // FUNGSI SIMPAN SESI & REDIRECT KE INDEX.HTML (GITHUB)
     function saveAndRedirect(role) {
-      // 1. Simpan peranan dalam memori pelayar (Browser Session)
+      // PENTING: Padam sebarang sesi lama sebelum simpan yang baru
+      sessionStorage.clear();
+      
+      // Simpan peranan dalam memori pelayar (Browser Session)
       sessionStorage.setItem("userRole", role);
       
       const btn = document.querySelector('.btn-login');
       if (btn) {
-        btn.innerHTML = "Memuatkan...";
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
         btn.disabled = true;
       }
 
-      // 2. Arahkan pengguna ke Menu Utama (index.html) di GitHub
-      // Ini akan buka fail index.html yang kita dah buat tadi
+      // Arahkan pengguna ke Menu Utama (index.html)
       window.location.href = "index.html"; 
     }
   </script>
