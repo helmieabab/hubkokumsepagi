@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPR Aktiviti Kokurikulum Lain</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* CSS KEKAL ASAL SEPERTI KOD CIKGU */
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; margin: 0; padding: 10px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .nav-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header-dash { text-align: center; border-bottom: 3px solid #4318ff; padding-bottom: 15px; margin-bottom: 20px; }
+        #accessDenied { display: none; text-align: center; color: red; font-weight: bold; margin-top: 50px; }
+        #mainContent { display: none; }
+        .btn-main { background: #4318ff; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; margin-bottom: 20px;}
+        .btn-main:hover { background: #2b3674; }
+        .form-section { background: #f4f7fe; padding: 20px; border-radius: 10px; display: none; margin-top: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; color: #2b3674; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
+        textarea.form-control { resize: vertical; min-height: 80px; }
+        .row { display: flex; gap: 15px; }
+        .col { flex: 1; }
+        @media(max-width: 600px) { .row { flex-direction: column; } }
+        .file-upload-box { border: 2px dashed #4318ff; padding: 15px; text-align: center; border-radius: 8px; background: white; }
+        #loadingScreen { display: none; text-align: center; font-weight: bold; color: #4318ff; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="nav-header">
+        <button style="background:none; border:none; cursor:pointer; color:#4318ff; font-weight:bold;" onclick="kembaliKeMenu()">⬅️ MENU UTAMA</button>
+        <span id="userStatus" style="font-size: 12px; color: #a3aed0;">Menyemak akses...</span>
+    </div>
+
+    <div class="header-dash">
+        <h1 style="font-size: 20px; margin: 0; color: #2b3674;">PELAPORAN OPR AKTIVITI LAIN</h1>
+        <p style="font-size: 13px; color: #4318ff; margin: 0; font-weight: 600;">SK KEPANGIAN</p>
+    </div>
+
+    <div id="accessDenied">
+        <p>⛔ Maaf, halaman ini hanya dikhaskan untuk kegunaan Guru dan Pentadbir sistem sahaja.</p>
+    </div>
+
+    <div id="mainContent">
+        <button class="btn-main" onclick="bukaBorang()">➕ TAMBAH AKTIVITI / REKOD BARU</button>
+
+        <div id="borangOPR" class="form-section">
+            <h3 style="margin-top:0; color:#2b3674; border-bottom: 1px solid #ddd; padding-bottom: 10px;">Borang One Page Report (OPR)</h3>
+            
+            <div class="form-group">
+                <label>Nama Aktiviti / Program</label>
+                <input type="text" id="namaAktiviti" class="form-control" placeholder="Cth: Perkhemahan Perdana Unit Beruniform 2026">
+            </div>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label>Tarikh Mula</label>
+                    <input type="date" id="tarikhMula" class="form-control">
+                </div>
+                <div class="col form-group">
+                    <label>Tarikh Tamat</label>
+                    <input type="date" id="tarikhTamat" class="form-control">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label>Masa</label>
+                    <input type="text" id="masa" class="form-control" placeholder="Cth: 8.00 Pagi - 5.00 Petang">
+                </div>
+                <div class="col form-group">
+                    <label>Tempat</label>
+                    <input type="text" id="tempat" class="form-control" placeholder="Cth: Padang SK Kepangian">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label>Pengurus Aktiviti / Penyelaras</label>
+                    <input type="text" id="pengurus" class="form-control" placeholder="Nama pengurus">
+                </div>
+                <div class="col form-group">
+                    <label>Nama Pelapor</label>
+                    <input type="text" id="pelapor" class="form-control" placeholder="Nama anda (pelapor)">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label>Nama Perasmi (Jika Ada)</label>
+                    <input type="text" id="perasmi" class="form-control" placeholder="Kosongkan jika tiada">
+                </div>
+                <div class="col form-group">
+                    <label>Sasaran Peserta</label>
+                    <input type="text" id="sasaran" class="form-control" placeholder="Cth: Semua murid Tahun 4, 5, 6">
+                </div>
+            </div>
+
+            <div class="form-group file-upload-box">
+                <label style="color:#4318ff;">📄 Muat Naik Kertas Kerja (Pilihan)</label>
+                <input type="file" id="kertasKerja" accept=".pdf,.doc,.docx" style="margin-top: 10px;">
+            </div>
+
+            <div class="form-group"><label>Objektif</label><textarea id="objektif" class="form-control"></textarea></div>
+            <div class="form-group"><label>Ringkasan Aktiviti</label><textarea id="ringkasan" class="form-control"></textarea></div>
+            <div class="form-group"><label>Kekuatan</label><textarea id="kekuatan" class="form-control"></textarea></div>
+            <div class="form-group"><label>Penambahbaikan</label><textarea id="penambahbaikan" class="form-control"></textarea></div>
+            <div class="form-group"><label>Refleksi</label><textarea id="refleksi" class="form-control"></textarea></div>
+
+            <div class="form-group file-upload-box" style="border-color:#27ae60;">
+                <label style="color:#27ae60;">📸 Muat Naik 4 Gambar Bukti (Sila guna format Landskap)</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px; text-align:left;">
+                    <div><small>Gambar 1:</small> <input type="file" id="g1" accept="image/*" class="form-control"></div>
+                    <div><small>Gambar 2:</small> <input type="file" id="g2" accept="image/*" class="form-control"></div>
+                    <div><small>Gambar 3:</small> <input type="file" id="g3" accept="image/*" class="form-control"></div>
+                    <div><small>Gambar 4:</small> <input type="file" id="g4" accept="image/*" class="form-control"></div>
+                </div>
+            </div>
+
+            <button onclick="hantarBorang()" class="btn-main" style="background:#27ae60;">🚀 JANA PDF & SIMPAN</button>
+            <button onclick="tutupBorang()" class="btn-main" style="background:#e74c3c; margin-top:0;">BATAL</button>
+        </div>
+
+        <div id="loadingScreen">
+            <p>⏳ Sedang memproses borang, memuat naik fail & menjana PDF...</p>
+            <p><small>Sila tunggu sebentar. Jangan tutup tetingkap ini.</small></p>
+        </div>
+    </div>
+</div>
+
+<script>
+// UBAH: URL Web App Cikgu (Sama macam Login tadi)
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz5_Cby8cVAZtkEs4rYPcLhk3tGn-FeHvqVUYUle2s6HTy8tOuDlppRIJQGVllLY2oUiA/exec";
+
+document.addEventListener('DOMContentLoaded', function() {
+    const role = sessionStorage.getItem('userRole') || new URLSearchParams(window.location.search).get('role');
+    
+    if(role === 'ADMIN' || role === 'GURU') {
+        document.getElementById('mainContent').style.display = 'block';
+        document.getElementById('userStatus').innerText = (role === 'ADMIN') ? "Pentadbir Mod" : "Guru Mod";
+    } else {
+        document.getElementById('accessDenied').style.display = 'block';
+        document.getElementById('userStatus').innerText = "Akses Dihalang";
+    }
+});
+
+function bukaBorang() { document.getElementById('borangOPR').style.display = 'block'; }
+function tutupBorang() { document.getElementById('borangOPR').style.display = 'none'; }
+
+// UBAH: Redirect ke Menu Utama ikut cara GitHub
+function kembaliKeMenu() {
+    const role = sessionStorage.getItem('userRole') || "IBUBAPA";
+    window.top.location.href = WEB_APP_URL + "?page=Dashboard&role=" + role;
+}
+
+function failKepadaBase64(file) {
+    return new Promise((resolve, reject) => {
+        if (!file) { resolve(""); return; }
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
+
+// UBAH: Fungsi Hantar Borang menggunakan Fetch (Bukan google.script.run)
+async function hantarBorang() {
+    const namaAktiviti = document.getElementById('namaAktiviti').value;
+    const tarikhMula = document.getElementById('tarikhMula').value;
+    const g1File = document.getElementById('g1').files[0];
+    const g2File = document.getElementById('g2').files[0];
+    const g3File = document.getElementById('g3').files[0];
+    const g4File = document.getElementById('g4').files[0];
+
+    if(!namaAktiviti || !tarikhMula || !g1File || !g2File || !g3File || !g4File) {
+        alert("Sila isikan Nama Aktiviti, Tarikh Mula, dan muat naik keempat-empat gambar!");
+        return;
+    }
+
+    document.getElementById('borangOPR').style.display = 'none';
+    document.getElementById('loadingScreen').style.display = 'block';
+
+    try {
+        const kkInput = document.getElementById('kertasKerja').files[0];
+        let dataKertasKerja = null;
+        if(kkInput) {
+            dataKertasKerja = {
+                name: kkInput.name,
+                mimeType: kkInput.type,
+                data: await failKepadaBase64(kkInput)
+            };
+        }
+
+        const payload = {
+            action: "simpanBorangOPR", // Tambah action untuk backend kenal
+            namaAktiviti: namaAktiviti,
+            tarikhMula: tarikhMula,
+            tarikhTamat: document.getElementById('tarikhTamat').value,
+            masa: document.getElementById('masa').value,
+            tempat: document.getElementById('tempat').value,
+            pengurus: document.getElementById('pengurus').value,
+            pelapor: document.getElementById('pelapor').value,
+            perasmi: document.getElementById('perasmi').value,
+            sasaran: document.getElementById('sasaran').value,
+            objektif: document.getElementById('objektif').value,
+            ringkasan: document.getElementById('ringkasan').value,
+            kekuatan: document.getElementById('kekuatan').value,
+            penambahbaikan: document.getElementById('penambahbaikan').value,
+            refleksi: document.getElementById('refleksi').value,
+            kertasKerja: dataKertasKerja,
+            gambar1: await failKepadaBase64(g1File),
+            gambar2: await failKepadaBase64(g2File),
+            gambar3: await failKepadaBase64(g3File),
+            gambar4: await failKepadaBase64(g4File)
+        };
+
+        // Guna Fetch untuk hantar ke GAS dari GitHub/Vercel
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            document.getElementById('loadingScreen').style.display = 'none';
+            if(res.success) {
+                alert("✅ OPR Berjaya Disimpan!");
+                window.open(res.pdfUrl, '_blank');
+                location.reload();
+            } else {
+                alert("❌ Ralat: " + res.error);
+                document.getElementById('borangOPR').style.display = 'block';
+            }
+        });
+
+    } catch (e) {
+        alert("Ralat: " + e.message);
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('borangOPR').style.display = 'block';
+    }
+}
+</script>
+</body>
+</html>
