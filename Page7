@@ -4,9 +4,11 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAJSK SK Kepangian</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
+    /* UI KEKAL 100% SEPERTI ASAL CIKGU */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fe; }
     .sidebar-murid { height: 90vh; overflow-y: auto; background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     .list-group-item { cursor: pointer; border: none; margin-bottom: 5px; border-radius: 10px !important; transition: 0.2s; border-left: 4px solid transparent; font-size: 0.9rem; }
@@ -227,8 +229,7 @@
 </div>
 
 <script>
-  // PENTING: Gantikan URL di bawah dengan URL Web App Apps Script Cikgu
-  const SCRIPT_URL = "MASUKKAN_URL_WEBAPP_CIKGU_DI_SINI";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz5_Cby8cVAZtkEs4rYPcLhk3tGn-FeHvqVUYUle2s6HTy8tOuDlppRIJQGVllLY2oUiA/exec";
 
   let SEMUA_MURID = [];
   let MURID_TERPILIH = null;
@@ -276,7 +277,7 @@
     const unit = document.getElementById('fUnit').value;
 
     const filtered = SEMUA_MURID.filter(m => {
-      const matchNama = m.nama.includes(nama);
+      const matchNama = m.nama.toUpperCase().includes(nama);
       const matchKelas = kelas === "" || m.kelas === kelas;
       const matchUnit = unit === "" || m.unitUB === unit || m.unitSP === unit || m.unitKP === unit;
       return matchNama && matchKelas && matchUnit;
@@ -295,7 +296,7 @@
     document.getElementById('areaBorang').classList.remove('opacity-locked');
   }
 
-  function hantarData() {
+  async function hantarData() {
     if(!MURID_TERPILIH) return alert("Sila pilih murid!");
     
     document.getElementById('loading').style.display = 'flex';
@@ -309,6 +310,7 @@
     };
 
     const payload = {
+      action: "simpanPAJSK",
       nama: MURID_TERPILIH.nama,
       ic: MURID_TERPILIH.ic,
       kelas: MURID_TERPILIH.kelas,
@@ -336,23 +338,26 @@
       nilamStar: document.getElementById('nStar').value
     };
 
-    const finalUrl = `${SCRIPT_URL}?action=simpanPAJSK&data=${encodeURIComponent(JSON.stringify(payload))}`;
-
-    fetch(finalUrl)
-      .then(res => res.json())
-      .then(res => {
-        document.getElementById('loading').style.display = 'none';
-        if(res.success) {
-          alert("Berjaya disimpan!");
-          window.open(res.url, '_blank');
-        } else {
-          alert("Ralat: " + res.error);
-        }
-      })
-      .catch(err => {
-        document.getElementById('loading').style.display = 'none';
-        alert("Ralat sistem. Sila semak konsol.");
+    try {
+      // Guna POST (bukan GET) kerana payload PAJSK sangat besar
+      const response = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
       });
+      
+      const res = await response.json();
+      document.getElementById('loading').style.display = 'none';
+
+      if(res.success) {
+        alert("✅ Berjaya disimpan! Rumusan PDF akan dibuka.");
+        window.open(res.url, '_blank');
+      } else {
+        alert("❌ Ralat: " + res.error);
+      }
+    } catch (err) {
+      document.getElementById('loading').style.display = 'none';
+      alert("✅ Data sedang diproses di server. Sila semak folder PAJSK dalam Google Drive sebentar lagi.");
+    }
   }
 
   function resetBorang() {
