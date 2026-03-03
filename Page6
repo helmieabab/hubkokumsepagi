@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    /* CSS KEKAL SEPERTI ASAL CIKGU */
+    body { font-family: 'Poppins', sans-serif; background: #f4f7fe; padding: 20px; margin:0; }
+    .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .header-segak { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #4318ff; margin-bottom: 20px; padding-bottom: 10px; }
+    .header-segak h2 { margin: 0; font-size: 1.1rem; color: #1b2559; }
+    .btn-back { background: #eee; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    .filter-section { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; background: #f8f9ff; padding: 15px; border-radius: 10px; align-items: flex-end; }
+    select, input { padding: 8px; border-radius: 5px; border: 1px solid #ddd; background: white; }
+    .loading-status { color: #4318ff; font-weight: bold; padding: 10px; display: none; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 13px; }
+    th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+    th { background: #4318ff; color: white; position: sticky; top: 0; }
+    tr:hover { background-color: #f1f4f9; }
+    .btn-isi { background: #05cd99; color: white; border: none; padding: 6px 15px; border-radius: 50px; cursor: pointer; font-size: 11px; font-weight: bold;}
+    .modal { display:none; position:fixed; z-index:100; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6); overflow-y:auto; padding-top:20px; }
+    .modal-content { background:white; margin:auto; padding:20px; width:90%; max-width:700px; border-radius:15px; margin-bottom:50px;}
+    .grid-input { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .input-group { display: flex; flex-direction: column; }
+    .input-group label { font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #707eae; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header-segak">
+    <h2>PENGURUSAN SEGAK (TAHUN 4, 5, 6)</h2>
+    <button class="btn-back" onclick="kembaliKeMenu()">⬅️ UTAMA</button>
+  </div>
+
+  <div class="filter-section">
+    <div class="input-group">
+      <label>Tahun Akademik:</label>
+      <select id="tahunAkademik" onchange="paparJadual()">
+        <option value="2026">2026</option>
+        <option value="2027">2027</option>
+        <option value="2028">2028</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Penggal:</label>
+      <select id="penggal" onchange="paparJadual()">
+        <option value="1">PENGGAL 1 (MAC)</option>
+        <option value="2">PENGGAL 2 (OGOS)</option>
+      </select>
+    </div>
+    <div id="statusLoad" class="loading-status">🔄 Memuatkan data murid...</div>
+  </div>
+
+  <div id="senaraiKelas"></div>
+</div>
+
+<div id="modalSegak" class="modal">
+  <div class="modal-content">
+    <h3 id="modalTitle" style="color:#4318ff; margin-top:0;">Borang Rekod SEGAK</h3>
+    <hr>
+    <div id="borangIsi">
+      <div class="grid-input">
+        <div class="input-group">
+          <label>Tinggi (cm):</label>
+          <input type="number" id="tinggi" oninput="kiraBMI()" placeholder="Cth: 150">
+        </div>
+        <div class="input-group">
+          <label>Berat (kg):</label>
+          <input type="number" id="berat" oninput="kiraBMI()" placeholder="Cth: 45">
+        </div>
+        <div class="input-group">
+          <label>BMI:</label>
+          <div style="font-size: 1.5rem; font-weight: bold; color: #05cd99;" id="valBMI">0.0</div>
+        </div>
+      </div>
+      
+      <table>
+        <tr><th>Jenis Ujian</th><th>Skor Mentah</th></tr>
+        <tr><td>Naik Turun Bangku (Kadar Nadi)</td><td><input type="number" id="vBangku" style="width:90%"></td></tr>
+        <tr><td>Tekan Tubi (Ulangan)</td><td><input type="number" id="vTekan" style="width:90%"></td></tr>
+        <tr><td>Ringkuk Tubi Separa (Ulangan)</td><td><input type="number" id="vRingkuk" style="width:90%"></td></tr>
+        <tr><td>Jangkauan Melunjur (cm)</td><td><input type="number" id="vJangkau" style="width:90%"></td></tr>
+      </table>
+      
+      <div style="margin-top:20px; text-align:right; display: flex; justify-content: flex-end; gap: 10px;">
+        <button onclick="document.getElementById('modalSegak').style.display='none'" style="padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">BATAL</button>
+        <button id="btnSimpan" onclick="simpanSegak()" style="background:#4318ff; color:white; padding:10px 25px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">💾 SIMPAN & JANA PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz5_Cby8cVAZtkEs4rYPcLhk3tGn-FeHvqVUYUle2s6HTy8tOuDlppRIJQGVllLY2oUiA/exec";
+let allStudents = [];
+let currentStudent = null;
+
+window.onload = function() {
+  muatSenarai();
+};
+
+function kembaliKeMenu() {
+    const role = sessionStorage.getItem('userRole') || "IBUBAPA";
+    window.top.location.href = WEB_APP_URL + "?page=Dashboard&role=" + role;
+}
+
+// UBAH: Ambil data guna Fetch (POST)
+async function muatSenarai() {
+  const status = document.getElementById('statusLoad');
+  const container = document.getElementById('senaraiKelas');
+  status.style.display = 'inline-block';
+  
+  try {
+    const response = await fetch(WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "getStudentsForSegak" })
+    });
+    const data = await response.json();
+    allStudents = data;
+    paparJadual();
+  } catch (err) {
+    container.innerHTML = "Ralat memuatkan data. Sila pastikan doPost tersedia di GAS.";
+  }
+  status.style.display = 'none';
+}
+
+function paparJadual() {
+  const container = document.getElementById('senaraiKelas');
+  if (!allStudents || allStudents.length === 0) {
+    container.innerHTML = "<p style='text-align:center; padding:20px;'>Tiada data murid ditemui.</p>";
+    return;
+  }
+
+  allStudents.sort((a, b) => (a.kelas).localeCompare(b.kelas));
+  const kelasUnik = [...new Set(allStudents.map(s => s.kelas))];
+  
+  let html = "";
+  kelasUnik.forEach(kls => {
+    html += `<div style="background:#4318ff; color:white; padding:8px 15px; border-radius:8px; margin-top:20px; font-weight:bold; font-size:14px;">KELAS: ${kls}</div>
+             <table>
+               <thead>
+                 <tr>
+                   <th style="width:30px">Bil</th>
+                   <th>Nama Murid</th>
+                   <th style="text-align:center; width:80px;">Tindakan</th>
+                 </tr>
+               </thead>
+               <tbody>`;
+    
+    let bil = 1;
+    allStudents.filter(s => s.kelas === kls).forEach(s => {
+      // Kita tukar cara passing data supaya lebih selamat untuk GitHub
+      const studentData = encodeURIComponent(JSON.stringify(s));
+      html += `<tr>
+        <td>${bil++}</td>
+        <td><div style="font-weight:600; text-transform:uppercase;">${s.nama}</div><div style="font-size:10px; color:gray;">KP: ${s.ic}</div></td>
+        <td style="text-align:center;"><button class="btn-isi" onclick="bukaBorang('${studentData}')">ISI</button></td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+  });
+  container.innerHTML = html;
+}
+
+function kiraBMI() {
+  const t = document.getElementById('tinggi').value / 100;
+  const b = document.getElementById('berat').value;
+  if(t > 0 && b > 0) {
+    const bmi = (b / (t * t)).toFixed(1);
+    document.getElementById('valBMI').innerText = bmi;
+  }
+}
+
+function bukaBorang(encodedData) {
+  const s = JSON.parse(decodeURIComponent(encodedData));
+  currentStudent = s;
+  document.getElementById('modalTitle').innerText = "BORANG SEGAK: " + s.nama;
+  document.getElementById('modalSegak').style.display = 'block';
+  
+  // Reset input
+  document.getElementById('tinggi').value = "";
+  document.getElementById('berat').value = "";
+  document.getElementById('valBMI').innerText = "0.0";
+  document.getElementById('vBangku').value = "";
+  document.getElementById('vTekan').value = "";
+  document.getElementById('vRingkuk').value = "";
+  document.getElementById('vJangkau').value = "";
+}
+
+// UBAH: Simpan data guna Fetch (POST)
+async function simpanSegak() {
+  const btn = document.getElementById('btnSimpan');
+  btn.innerText = "⌛ SEDANG DISIMPAN...";
+  btn.disabled = true;
+
+  const payload = {
+    action: "simpanDanJanaSegak",
+    tahunAkademik: document.getElementById('tahunAkademik').value,
+    penggal: document.getElementById('penggal').value,
+    nama: currentStudent.nama,
+    ic: currentStudent.ic,
+    kelas: currentStudent.kelas,
+    jantina: currentStudent.jantina,
+    umur: new Date().getFullYear() - (2000 + parseInt(currentStudent.ic.substring(0,2))),
+    tinggi: document.getElementById('tinggi').value,
+    berat: document.getElementById('berat').value,
+    bmi: document.getElementById('valBMI').innerText,
+    bangku: document.getElementById('vBangku').value,
+    tekanTubi: document.getElementById('vTekan').value,
+    ringkuk: document.getElementById('vRingkuk').value,
+    jangkauan: document.getElementById('vJangkau').value
+  };
+  
+  try {
+    const response = await fetch(WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    const res = await response.json();
+    
+    if(res.success) {
+      alert("✅ Berjaya! PDF telah dijana.");
+      window.open(res.pdfUrl || res.url, '_blank');
+      document.getElementById('modalSegak').style.display = 'none';
+    } else {
+      alert("❌ Ralat: " + res.error);
+    }
+  } catch (err) {
+    alert("Ralat sistem: " + err.message);
+  }
+  
+  btn.innerText = "💾 SIMPAN & JANA PDF";
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>
