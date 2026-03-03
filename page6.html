@@ -22,7 +22,6 @@
     tr:hover { background-color: #f1f4f9; }
     .btn-isi { background: #05cd99; color: white; border: none; padding: 6px 15px; border-radius: 50px; cursor: pointer; font-size: 11px; font-weight: bold;}
     
-    /* Modal Design */
     .modal { display:none; position:fixed; z-index:100; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6); overflow-y:auto; padding-top:20px; }
     .modal-content { background:white; margin:auto; padding:20px; width:95%; max-width:700px; border-radius:15px; margin-bottom:50px; box-sizing: border-box;}
     .grid-input { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
@@ -97,17 +96,23 @@
 </div>
 
 <script>
+// PASTIKAN URL INI BETUL (URL WEB APP GOOGLE SCRIPT CIKGU)
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz5_Cby8cVAZtkEs4rYPcLhk3tGn-FeHvqVUYUle2s6HTy8tOuDlppRIJQGVllLY2oUiA/exec";
 let allStudents = [];
 let currentStudent = null;
 
 window.onload = function() {
+  // Guard Sesi: Jika tak login, tendang ke login.html
+  if (!sessionStorage.getItem('userRole')) {
+    window.location.href = "login.html";
+    return;
+  }
   muatSenarai();
 };
 
 function kembaliKeMenu() {
-    const role = sessionStorage.getItem('userRole') || "IBUBAPA";
-    window.top.location.href = WEB_APP_URL + "?page=Dashboard&role=" + role;
+    // Balik ke index.html di GitHub, bukannya URL Web App
+    window.location.href = "index.html";
 }
 
 async function muatSenarai() {
@@ -116,12 +121,18 @@ async function muatSenarai() {
   status.style.display = 'inline-block';
   
   try {
-    const response = await fetch(WEB_APP_URL + "?action=getStudentsForSegak");
+    // KEMASKINI 1: Guna POST untuk ambil data (selari dengan doOptions/doPost)
+    const response = await fetch(WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "getStudentsForSegak" })
+    });
+    
     const data = await response.json();
     allStudents = data;
     paparJadual();
   } catch (err) {
-    container.innerHTML = "<p style='color:red; text-align:center;'>Gagal memuatkan data. Sila periksa sambungan internet atau Web App URL.</p>";
+    console.error(err);
+    container.innerHTML = "<p style='color:red; text-align:center;'>Gagal memuatkan data. Sila pastikan Web App telah di-Deploy sebagai 'Anyone' dan doOptions telah ditambah.</p>";
   }
   status.style.display = 'none';
 }
@@ -133,7 +144,6 @@ function paparJadual() {
     return;
   }
 
-  // Grouping by kelas
   const kelasUnik = [...new Set(allStudents.map(s => s.kelas))].sort();
   
   let html = "";
@@ -151,8 +161,7 @@ function paparJadual() {
                <tbody>`;
     
     let bil = 1;
-    allStudents.filter(s => s.kelas === kls).forEach((s, index) => {
-      // Kita simpan index untuk rujukan bukaBorang
+    allStudents.filter(s => s.kelas === kls).forEach((s) => {
       html += `<tr>
         <td>${bil++}</td>
         <td><div style="font-weight:600; text-transform:uppercase;">${s.nama}</div><div style="font-size:10px; color:gray;">IC: ${s.ic}</div></td>
@@ -183,7 +192,6 @@ function bukaBorang(icNum) {
   document.getElementById('modalTitle').innerText = "BORANG SEGAK: " + s.nama;
   document.getElementById('modalSegak').style.display = 'block';
   
-  // Reset input
   document.getElementById('tinggi').value = "";
   document.getElementById('berat').value = "";
   document.getElementById('valBMI').innerText = "0.0";
@@ -224,15 +232,12 @@ async function simpanSegak() {
   };
   
   try {
-    // Gunakan mode: 'no-cors' jika mahu senyap, tetapi untuk JSON response kita cuba standard fetch dulu
     const response = await fetch(WEB_APP_URL, {
       method: "POST",
       body: JSON.stringify(payload)
     });
     
-    // Kerana fetch ke GAS selalunya trigger ralat CORS walaupun data masuk,
-    // Kita anggap berjaya jika tiada error network.
-    alert("✅ Data telah dihantar ke sistem! Sila semak Rekod SEGAK dalam Google Drive sebentar lagi.");
+    alert("✅ Data telah dihantar ke sistem! Sila semak folder Rekod SEGAK.");
     document.getElementById('modalSegak').style.display = 'none';
 
   } catch (err) {
@@ -244,7 +249,6 @@ async function simpanSegak() {
   btn.disabled = false;
 }
 
-// Tutup modal jika klik luar kotak
 window.onclick = function(event) {
   if (event.target == document.getElementById('modalSegak')) {
     document.getElementById('modalSegak').style.display = "none";
