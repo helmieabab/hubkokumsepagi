@@ -133,7 +133,7 @@
 </div>
 
 <script>
-// UBAH: URL Web App Cikgu (Sama macam Login tadi)
+// UBAH: URL Web App Cikgu
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz5_Cby8cVAZtkEs4rYPcLhk3tGn-FeHvqVUYUle2s6HTy8tOuDlppRIJQGVllLY2oUiA/exec";
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -151,7 +151,6 @@ document.addEventListener('DOMContentLoaded', function() {
 function bukaBorang() { document.getElementById('borangOPR').style.display = 'block'; }
 function tutupBorang() { document.getElementById('borangOPR').style.display = 'none'; }
 
-// UBAH: Redirect ke Menu Utama ikut cara GitHub
 function kembaliKeMenu() {
     const role = sessionStorage.getItem('userRole') || "IBUBAPA";
     window.top.location.href = WEB_APP_URL + "?page=Dashboard&role=" + role;
@@ -162,12 +161,11 @@ function failKepadaBase64(file) {
         if (!file) { resolve(""); return; }
         const reader = new FileReader();
         reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
+        reader.onload = () => resolve(reader.result.split(',')[1]); // Ambil data Base64 sahaja tanpa prefix
         reader.onerror = error => reject(error);
     });
 }
 
-// UBAH: Fungsi Hantar Borang menggunakan Fetch (Bukan google.script.run)
 async function hantarBorang() {
     const namaAktiviti = document.getElementById('namaAktiviti').value;
     const tarikhMula = document.getElementById('tarikhMula').value;
@@ -196,7 +194,7 @@ async function hantarBorang() {
         }
 
         const payload = {
-            action: "simpanBorangOPR", // Tambah action untuk backend kenal
+            action: "simpanBorangOPR",
             namaAktiviti: namaAktiviti,
             tarikhMula: tarikhMula,
             tarikhTamat: document.getElementById('tarikhTamat').value,
@@ -218,22 +216,14 @@ async function hantarBorang() {
             gambar4: await failKepadaBase64(g4File)
         };
 
-        // Guna Fetch untuk hantar ke GAS dari GitHub/Vercel
         fetch(WEB_APP_URL, {
             method: "POST",
+            mode: "no-cors", // Penting untuk elakkan ralat CORS dari GitHub
             body: JSON.stringify(payload)
-        })
-        .then(res => res.json())
-        .then(res => {
+        }).then(() => {
             document.getElementById('loadingScreen').style.display = 'none';
-            if(res.success) {
-                alert("✅ OPR Berjaya Disimpan!");
-                window.open(res.pdfUrl, '_blank');
-                location.reload();
-            } else {
-                alert("❌ Ralat: " + res.error);
-                document.getElementById('borangOPR').style.display = 'block';
-            }
+            alert("✅ Borang sedang diproses! PDF akan dijana dalam Google Drive. Sila semak emel atau folder rekod sebentar lagi.");
+            location.reload();
         });
 
     } catch (e) {
