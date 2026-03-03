@@ -180,7 +180,7 @@
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       document.getElementById('datetime').innerText = new Date().toLocaleDateString('ms-MY', options);
 
-      // 2. Konfigurasi Menu (Pastikan nama fail huruf kecil ikut GitHub)
+      // 2. Konfigurasi Menu
       const menuConfig = [
         { name: 'Dashboard', desc: 'Rumusan & Statistik', page: 'dashboard.html', icon: 'fa-chart-line', colorClass: 'color-7', roles: ['ADMIN', 'GURU'] },
         { name: 'Pelaporan', desc: 'Kehadiran & Aktiviti', page: 'page3.html', icon: 'fa-clipboard-check', colorClass: 'color-2', roles: ['ADMIN', 'GURU'] },
@@ -191,21 +191,26 @@
         { name: 'Markah PAJSK', desc: 'Penilaian Akhir', page: 'page7.html', icon: 'fa-chart-pie', colorClass: 'color-6', roles: ['ADMIN', 'GURU'] }
       ];
 
-      // 3. Logik Permulaan Fail
+      // 3. Logik Permulaan Fail (Guard Sesi)
       window.onload = () => {
+        // AMBIL SESI
         const sessionRole = sessionStorage.getItem('userRole');
         
-        // Keselamatan: Jika belum login, tendang balik ke login.html
+        // KEMASKINI 1: GUARD LOGIN - Tendang jika tiada sesi
         if (!sessionRole) {
           window.location.href = "login.html";
           return;
         }
 
-        let userName = "Ibu Bapa";
-        if (sessionRole === 'ADMIN') userName = "Administrator";
-        if (sessionRole === 'GURU') userName = "Cikgu";
+        // KEMASKINI 2: PENYERAGAMAN NAMA USER & ROLE
+        let userName = "Pelawat";
+        const roleUpper = sessionRole.toUpperCase();
+        
+        if (roleUpper === 'ADMIN') userName = "Administrator";
+        else if (roleUpper === 'GURU') userName = "Cikgu";
+        else if (roleUpper === 'IBUBAPA') userName = "Ibu Bapa / Murid";
 
-        buildDashboard({ role: sessionRole, name: userName });
+        buildDashboard({ role: roleUpper, name: userName });
       };
 
       function buildDashboard(user) {
@@ -215,19 +220,17 @@
           setTimeout(() => loader.style.display = 'none', 500);
         }
 
-        const roleStr = user.role.toUpperCase();
-        
         // Papar Profil Pengguna
         document.getElementById('user-info').innerHTML = `
           <i class="fas fa-user-circle fs-5"></i> 
-          <span>Hi, <strong>${user.name}</strong> (${roleStr})</span>
+          <span>Hi, <strong>${user.name}</strong></span>
         `;
 
         // Jana Menu Ikut Peranan (Role)
         const container = document.getElementById('menu-container');
         let html = '';
         menuConfig.forEach((item, index) => {
-          if (item.roles.includes(roleStr)) {
+          if (item.roles.includes(user.role)) {
             const delay = (index * 0.1) + 0.2;
             html += `
               <div class="bento-card fade-in-up" style="animation-delay: ${delay}s;" onclick="goToPage('${item.page}')">
@@ -248,8 +251,10 @@
       }
 
       function logout() {
-        sessionStorage.clear();
-        window.location.href = "login.html";
+        if(confirm("Adakah anda ingin log keluar?")) {
+          sessionStorage.clear();
+          window.location.href = "login.html";
+        }
       }
     </script>
   </body>
