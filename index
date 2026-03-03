@@ -4,6 +4,7 @@
     <base target="_top">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>E-KOKUM SEPAGI - Menu Utama</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -168,19 +169,18 @@
             <p>Sistem Pengurusan Kokurikulum</p>
           </div>
         </div>
-        <div class="user-badge" id="user-info">
-          </div>
+        <div class="user-badge" id="user-info"></div>
       </div>
 
       <div class="bento-grid" id="menu-container"></div>
     </div>
 
     <script>
-      // Dapatkan tarikh hari ini
+      // 1. Paparan Tarikh
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       document.getElementById('datetime').innerText = new Date().toLocaleDateString('ms-MY', options);
 
-      // KEMAS KINI: Tukar nama fail kepada huruf kecil supaya GitHub boleh baca dengan betul
+      // 2. Konfigurasi Menu (Pastikan nama fail huruf kecil ikut GitHub)
       const menuConfig = [
         { name: 'Dashboard', desc: 'Rumusan & Statistik', page: 'dashboard.html', icon: 'fa-chart-line', colorClass: 'color-7', roles: ['ADMIN', 'GURU'] },
         { name: 'Pelaporan', desc: 'Kehadiran & Aktiviti', page: 'page3.html', icon: 'fa-clipboard-check', colorClass: 'color-2', roles: ['ADMIN', 'GURU'] },
@@ -191,12 +191,16 @@
         { name: 'Markah PAJSK', desc: 'Penilaian Akhir', page: 'page7.html', icon: 'fa-chart-pie', colorClass: 'color-6', roles: ['ADMIN', 'GURU'] }
       ];
 
-      // KEMAS KINI: Binaan Menu Tanpa perlu fetch dari GAS (Lebih Pantas!)
+      // 3. Logik Permulaan Fail
       window.onload = () => {
-        // Ambil data dari login yang disimpan di browser
-        const sessionRole = sessionStorage.getItem('userRole') || 'IBUBAPA';
+        const sessionRole = sessionStorage.getItem('userRole');
         
-        // Tetapkan nama pengguna berdasarkan Role
+        // Keselamatan: Jika belum login, tendang balik ke login.html
+        if (!sessionRole) {
+          window.location.href = "login.html";
+          return;
+        }
+
         let userName = "Ibu Bapa";
         if (sessionRole === 'ADMIN') userName = "Administrator";
         if (sessionRole === 'GURU') userName = "Cikgu";
@@ -205,7 +209,6 @@
       };
 
       function buildDashboard(user) {
-        // Buang paparan 'Loading'
         const loader = document.getElementById('loader');
         if(loader) {
           loader.style.opacity = '0';
@@ -214,13 +217,13 @@
 
         const roleStr = user.role.toUpperCase();
         
-        // Paparkan lencana pengguna
+        // Papar Profil Pengguna
         document.getElementById('user-info').innerHTML = `
           <i class="fas fa-user-circle fs-5"></i> 
           <span>Hi, <strong>${user.name}</strong> (${roleStr})</span>
         `;
 
-        // Bina kotak-kotak menu (Bento)
+        // Jana Menu Ikut Peranan (Role)
         const container = document.getElementById('menu-container');
         let html = '';
         menuConfig.forEach((item, index) => {
@@ -241,13 +244,12 @@
       }
 
       function goToPage(page) {
-        // Navigasi ke fail HTML yang diklik
         window.location.href = page;
       }
 
       function logout() {
-        sessionStorage.removeItem("userRole");
-        window.location.href = "login.html"; // Pastikan fail login dinamakan 'login.html' (huruf kecil)
+        sessionStorage.clear();
+        window.location.href = "login.html";
       }
     </script>
   </body>
