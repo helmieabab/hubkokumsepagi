@@ -134,6 +134,7 @@
 
       #loader { position: fixed; inset: 0; background: var(--bg-color); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; }
       .loader-spinner { width: 50px; height: 50px; border: 5px solid rgba(67,24,255,0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+      
       @keyframes spin { to { transform: rotate(360deg); } }
       @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
       .fade-in-up { animation: fadeInUp 0.6s ease forwards; opacity: 0; }
@@ -168,64 +169,58 @@
           </div>
         </div>
         <div class="user-badge" id="user-info">
-          <i class="fas fa-circle-notch fa-spin"></i> Memuatkan Profil...
-        </div>
+          </div>
       </div>
 
       <div class="bento-grid" id="menu-container"></div>
     </div>
 
     <script>
-      // PENTING: Gantikan dengan URL Web App Apps Script Cikgu
-      const SCRIPT_URL = "MASUKKAN_URL_WEBAPP_CIKGU_DI_SINI";
-
+      // Dapatkan tarikh hari ini
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       document.getElementById('datetime').innerText = new Date().toLocaleDateString('ms-MY', options);
 
-      let currentUserRole = "IBUBAPA";
-
+      // KEMAS KINI: Tukar nama fail kepada huruf kecil supaya GitHub boleh baca dengan betul
       const menuConfig = [
-        { name: 'Dashboard', desc: 'Rumusan & Statistik', page: 'Dashboard.html', icon: 'fa-chart-line', colorClass: 'color-7', roles: ['ADMIN', 'GURU'] },
-        { name: 'Pelaporan', desc: 'Kehadiran & Aktiviti', page: 'Page3.html', icon: 'fa-clipboard-check', colorClass: 'color-2', roles: ['ADMIN', 'GURU'] },
-        { name: 'Data Induk', desc: 'Pangkalan Data Murid', page: 'Page2.html', icon: 'fa-database', colorClass: 'color-1', roles: ['ADMIN', 'GURU', 'IBUBAPA'] },
-        { name: 'Takwim', desc: 'Jadual Tahunan', page: 'Page4.html', icon: 'fa-calendar-alt', colorClass: 'color-3', roles: ['ADMIN', 'GURU', 'IBUBAPA'] },
-        { name: 'Aktiviti Kokum Lain', desc: 'Laporan OPR & Aktiviti', page: 'Page5.html', icon: 'fa-award', colorClass: 'color-4', roles: ['ADMIN', 'GURU'] },
-        { name: 'Ujian SEGAK', desc: 'Rekod Kecergasan', page: 'Page6.html', icon: 'fa-running', colorClass: 'color-5', roles: ['ADMIN', 'GURU'] },
-        { name: 'Markah PAJSK', desc: 'Penilaian Akhir', page: 'Page7.html', icon: 'fa-chart-pie', colorClass: 'color-6', roles: ['ADMIN', 'GURU'] }
+        { name: 'Dashboard', desc: 'Rumusan & Statistik', page: 'dashboard.html', icon: 'fa-chart-line', colorClass: 'color-7', roles: ['ADMIN', 'GURU'] },
+        { name: 'Pelaporan', desc: 'Kehadiran & Aktiviti', page: 'page3.html', icon: 'fa-clipboard-check', colorClass: 'color-2', roles: ['ADMIN', 'GURU'] },
+        { name: 'Data Induk', desc: 'Pangkalan Data Murid', page: 'page2.html', icon: 'fa-database', colorClass: 'color-1', roles: ['ADMIN', 'GURU', 'IBUBAPA'] },
+        { name: 'Takwim', desc: 'Jadual Tahunan', page: 'page4.html', icon: 'fa-calendar-alt', colorClass: 'color-3', roles: ['ADMIN', 'GURU', 'IBUBAPA'] },
+        { name: 'Aktiviti Kokum Lain', desc: 'Laporan OPR & Aktiviti', page: 'page5.html', icon: 'fa-award', colorClass: 'color-4', roles: ['ADMIN', 'GURU'] },
+        { name: 'Ujian SEGAK', desc: 'Rekod Kecergasan', page: 'page6.html', icon: 'fa-running', colorClass: 'color-5', roles: ['ADMIN', 'GURU'] },
+        { name: 'Markah PAJSK', desc: 'Penilaian Akhir', page: 'page7.html', icon: 'fa-chart-pie', colorClass: 'color-6', roles: ['ADMIN', 'GURU'] }
       ];
 
+      // KEMAS KINI: Binaan Menu Tanpa perlu fetch dari GAS (Lebih Pantas!)
       window.onload = () => {
+        // Ambil data dari login yang disimpan di browser
         const sessionRole = sessionStorage.getItem('userRole') || 'IBUBAPA';
         
-        // Panggil API untuk dapatkan role/user info
-        fetch(`${SCRIPT_URL}?action=getUserRole&role=${sessionRole}`)
-          .then(res => res.json())
-          .then(user => {
-            buildDashboard(user);
-          })
-          .catch(err => {
-            console.error("Gagal memuatkan profil:", err);
-            // Default fallback jika API gagal
-            buildDashboard({role: sessionRole, name: 'Pengguna'});
-          });
+        // Tetapkan nama pengguna berdasarkan Role
+        let userName = "Ibu Bapa";
+        if (sessionRole === 'ADMIN') userName = "Administrator";
+        if (sessionRole === 'GURU') userName = "Cikgu";
+
+        buildDashboard({ role: sessionRole, name: userName });
       };
 
       function buildDashboard(user) {
+        // Buang paparan 'Loading'
         const loader = document.getElementById('loader');
         if(loader) {
           loader.style.opacity = '0';
           setTimeout(() => loader.style.display = 'none', 500);
         }
 
-        currentUserRole = user.role;
         const roleStr = user.role.toUpperCase();
-        const userName = user.name || "User";
         
+        // Paparkan lencana pengguna
         document.getElementById('user-info').innerHTML = `
           <i class="fas fa-user-circle fs-5"></i> 
-          <span>Hi, <strong>${userName.split(' ')[0]}</strong> (${roleStr})</span>
+          <span>Hi, <strong>${user.name}</strong> (${roleStr})</span>
         `;
 
+        // Bina kotak-kotak menu (Bento)
         const container = document.getElementById('menu-container');
         let html = '';
         menuConfig.forEach((item, index) => {
@@ -246,13 +241,13 @@
       }
 
       function goToPage(page) {
-        // Navigasi terus ke fail HTML dalam folder yang sama
+        // Navigasi ke fail HTML yang diklik
         window.location.href = page;
       }
 
       function logout() {
         sessionStorage.removeItem("userRole");
-        window.location.href = "Login.html";
+        window.location.href = "login.html"; // Pastikan fail login dinamakan 'login.html' (huruf kecil)
       }
     </script>
   </body>
